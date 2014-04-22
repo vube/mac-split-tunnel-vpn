@@ -33,13 +33,37 @@
  *       $5      the remote IP address
  *       $6      the parameter specified by the 'ipparam' option to pppd
  *
+ * NOTE: This script MUST be running as root, otherwise you will
+ * get notices about inability to change routing tables.  When /etc/ppp/ip-up
+ * is run, it is run as root.  If you are testing this, you must sudo when you
+ * run this if you actually want to modify routing tables.
  */
 
+/**
+ * Path to the JSON config file
+ * @var string
+ */
 $JSON_CONFIG_FILE = "/etc/ppp/routes.json";
 
+/**
+ * Path to the log file we will write
+ * @var string
+ */
 $LOG_FILE = "/tmp/ppp.ip-up.log";
+
+/**
+ * Log File Handle
+ *
+ * NULL unless/until we successfully open the log file for writing,
+ * thereafter, the return code of fopen()
+ * @var int
+ */
 $lfh = null;
 
+/**
+ * Argument names/descriptions
+ * @var array
+ */
 $argNames = array(
     '[0] path to this script',
     '[1] pppd Interface name',
@@ -50,7 +74,17 @@ $argNames = array(
     '[6] pppd ipparam option',
 );
 
-
+/**
+ * Warn the user of an unexpected potential issue
+ *
+ * All arguments treated as substrings that are concatenated and
+ * printed to STDERR.
+ *
+ * If the log file is open for writing, warnings are also written
+ * to the log.
+ *
+ * @return void
+ */
 function warn() {
     
     $msg = implode("", func_get_args());
@@ -69,7 +103,17 @@ function warn() {
     }
 }
 
-
+/**
+ * Notify the user of an error
+ *
+ * All arguments treated as substrings that are concatenated and
+ * printed to STDERR.
+ *
+ * If the log file is open for writing, errors are also written
+ * to the log.
+ *
+ * @return void
+ */
 function err() {
     
     $msg = implode("", func_get_args());
@@ -88,7 +132,14 @@ function err() {
     }
 }
 
-
+/**
+ * Open the log file
+ *
+ * If there are any errors trying to open, on the first error write out a
+ * warning message.  Inability to log is not a fatal condition.
+ *
+ * @return mixed fopen() result; FALSE if fopen() failed
+ */
 function openLogFile() {
     
     // Yuck, globals.  W/e this is just a simple script
@@ -123,7 +174,14 @@ function openLogFile() {
     return $lfh;
 }
 
-
+/**
+ * Write a log message
+ *
+ * All arguments treated as substrings that are concatenated and
+ * printed to to the log.
+ *
+ * @return void
+ */
 function logMessage() {
     
     // Yuck, globals.  W/e this is just a simple script
@@ -144,8 +202,16 @@ function logMessage() {
     }
 }
 
-
+/**
+ * Get a string dump of program arguments
+ *
+ * The value returned from here is intended to be printed to the log so
+ * users can see how the script is being invoked.
+ *
+ * @return string
+ */
 function getArgumentsDump($args) {
+
     $dump = [];
     $n = count($args);
 
@@ -156,7 +222,17 @@ function getArgumentsDump($args) {
     return implode("\n", $dump);
 }
 
-
+/**
+ * Convert a JSON object into an Assoc Array
+ *
+ * If the JSON object isn't really an object, print a warning message and
+ * return NULL.
+ *
+ * If the JSON object is an object, convert it to an assoc array and return
+ * that.
+ *
+ * @return array|NULL
+ */
 function expectObjectGetArray($obj, $errMsg='Data type error') {
     
     if(! is_object($obj)) {
@@ -168,22 +244,30 @@ function expectObjectGetArray($obj, $errMsg='Data type error') {
     return get_object_vars($obj);
 }
 
-
+/**
+ * Read in the routes.json config
+ *
+ * @return array Assoc array of decoded JSON config
+ */
 function getRoutes() {
 
+    // Read in the JSON_CONFIG_FILE
     if(! ($data = @file_get_contents($GLOBALS['JSON_CONFIG_FILE']))) {
         warn("No config data found in {$GLOBALS['JSON_CONFIG_FILE']}, or file is not readable");
         return null;
     }
 
+    // decode the JSON into an object
     $json = json_decode($data);
     if($json === null) {
         warn("Cannot parse json data in {$GLOBALS['JSON_CONFIG_FILE']}");
         return null;
     }
 
+    // Convert the JSON object into an assoc array
     $vars = expectObjectGetArray($json, "Invalid data contained in {$GLOBALS['JSON_CONFIG_FILE']}");
 
+    // Make sure at the VERY LEAST there are remotes defined in this array
     if(! isset($vars['remotes'])) {
         warn("No remotes specified in {$GLOBALS['JSON_CONFIG_FILE']}, treating config as empty");
         return null;
@@ -192,66 +276,90 @@ function getRoutes() {
     return $vars;
 }
 
-
+/**
+ * Configure the routes that should go to the current VPN
+ *
+ * NOTE: This script MUST be running as root, otherwise you will
+ * get notices about inability to change routing tables.  When /etc/ppp/ip-up
+ * is run, it is run as root.  If you are testing this, you must sudo when you
+ * run this if you actually want to modify routing tables.
+ *
+ * @return void
+ */
 function setRoutes($remoteRoutes) {
     
     $n = count($remoteRoutes);
     
+    // Which interface to send the network to (ppp0, ppp1, etc)
     $interface = $_SERVER['argv'][1];
+ 
+    // For every network that should use this route, configure it like:
+    //   /sbin/route add -net $net -interface $interface 2>&1
     
     for($i=0; $i<$n; $i++) {
 
+        // The network to route
         $net = $remoteRoutes[$i];
 
-        // /sbin/route add -net $net -interface $interface 2>&1
+        // System command to execute
         $command = '/sbin/route add -net ' . escapeshellarg($net)
         . ' -interface ' . escapeshellarg($interface)
         . ' 2>&1';
 
         logMessage("Exec: $command");
 
+        // Execute the command, capture its output and its exit code
         exec($command, $output, $r);
 
-        // Handle multi-line output
+        // Convert multi-line output to a single string
         if(is_array($output) && count($output)) {
             $output = implode("\n", $output);
         }
-        // Handle any output at all
+        // Log any output we received
         if($output !== '') {
             logMessage($output);
         }
 
+        // If the command failed to exit with success code, bail out
+        // and exit with the same failure code as the shell command used.
         if($r !== 0) {
-            err("route add failed, abort");
+            err("ABORT: route add failed, see log for details");
             exit($r);
         }
     }
 }
 
 
+/**
+ * Main
+ * @return int Program exit code
+ */
 function main() {
 
     logMessage("VPN Connection at ", date("Y-m-d H:i:s"));
     logMessage("System arguments:\n", getArgumentsDump($_SERVER['argv']));
 
+    // Load in the routes.json config
     $routes = getRoutes();
     if(! $routes)
-        return;
+        return 1;
 
     $remoteIp = $_SERVER['argv'][5];
     $remoteIpConfigs = expectObjectGetArray($routes['remotes'], "Invalid remotes value in routes.json");
 
+    // If we have a list of networks to send to this remote IP, set them
     if(isset($remoteIpConfigs[$remoteIp])) {
 
         logMessage("Configuring routes for $remoteIp");
         setRoutes($remoteIpConfigs[$remoteIp]);
     }
-    else {
+    else { // this remote IP is not known by the config
         
         logMessage("No routes configured for remote $remoteIp");
     }
+    
+    return 0;
 }
 
 
-main();
-
+return main();
