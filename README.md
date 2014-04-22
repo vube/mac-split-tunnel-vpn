@@ -1,5 +1,4 @@
-Mac OS X Split Tunnel VPN Routing Manager
-=========================================
+# Split Tunnel VPN Routing for Mac
 
 This is a simple script that makes it super easy for you to manage one or more VPN
 connections with split tunneling.
@@ -8,24 +7,24 @@ In particular this makes it very easy to connect to multiple VPNs simultaneously
 all traffic is kept going to the right place at the right time.
 
 
-# Installation
+## Installation
 
 ```bash
-git clone https://github.com/ross-p/mac-split-tunnel-vpn.git
-cd mac-split-tunnel-vpn
-sudo install -c -m 0755 ip-up.php /etc/ppp/ip-up
-cd /etc/ppp
-sudo ln -sf $HOME/.routes.json routes.json
+$ git clone https://github.com/vube/mac-split-tunnel-vpn.git
+$ cd mac-split-tunnel-vpn
+$ sudo install -c -m 0755 ip-up.php /etc/ppp/ip-up
+$ cd /etc/ppp
+$ sudo ln -sf $HOME/.routes.json routes.json
 ```
 
 
-# Configuration
+## Configuration
 
 You only need a file in your home directory that contains the routes.  In the install
 instructions, we symlink'd the `routes.json` config file to your home directory, a file
 named `$HOME/.routes.json`
 
-## Example `$HOME/.routes.json` file
+### Example `$HOME/.routes.json` file
 
 ```json
 { "remotes": {
@@ -35,40 +34,42 @@ named `$HOME/.routes.json`
 } }
 ```
 
-The above example will route all the traffic for the class C block 9.8.7.* to your VPN
-server whose IP is 1.2.3.4
+The above example will route all the traffic for the class C block `9.8.7.*` to your VPN
+server whose IP is `1.2.3.4`
 
-### More Advanced Example `$HOME/.routes.json` file
+### Advanced Example `$HOME/.routes.json` file
 
 ```json
 { "remotes": {
+    // Simple end-of-line comments like this are allowed
+    // VPN #1
 	"1.2.3.4": [
-		"9.8.7",
-		"8.7.6",
-		"7.6.5"
+		"9.8.7", // one network
+		"8.7.6", // another network
+		"7.6.5" // yet a third network
 	],
+	// VPN #2
 	"2.3.4.5": [
-		"4.5.6",
-		"5.6.7"
+		"4.5.6", // first network for VPN 2
+		"5.6.7" // second network for VPN 2
 	]
 } }
 ```
 
-The above file configures 2 VPNs, 1.2.3.4 and 2.3.4.5
+The above file configures 2 VPNs, `1.2.3.4` and `2.3.4.5`
 
-There are 3 networks routed through the 1.2.3.4 VPN: 9.8.7, 8.7.6 and 7.6.5
+There are 3 networks routed through the `1.2.3.4` VPN: `9.8.7.*`, `8.7.6.*` and `7.6.5.*`
 
-There are 2 networks routed through the 2.3.4.5 VPN: 4.5.6 and 5.6.7
+There are 2 networks routed through the `2.3.4.5` VPN: `4.5.6.*` and `5.6.7.*`
 
 
-# Reconnect to VPN for changes to take effect
+## Reconnect to VPN for changes to take effect
 
-After editing your $HOME/.routes.json file, you must disconnect from and reconnect to
+After editing your `$HOME/.routes.json` file, you must disconnect from and reconnect to
 your VPN for the changes to take effect.
 
 
-Why use this
-------------
+## Why use this
 
 This allows you to set up your VPN links such that the ONLY traffic that goes over
 the VPN is traffic that really NEEDS to be on the VPN link.  All other traffic will

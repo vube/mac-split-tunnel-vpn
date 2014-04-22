@@ -37,6 +37,9 @@
  * get notices about inability to change routing tables.  When /etc/ppp/ip-up
  * is run, it is run as root.  If you are testing this, you must sudo when you
  * run this if you actually want to modify routing tables.
+ *
+ * @author Ross Perkins <ross@vubeology.com>
+ * @source https://github.com/vube/mac-split-tunnel-vpn
  */
 
 /**
