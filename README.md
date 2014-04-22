@@ -114,3 +114,10 @@ Configuring routes for 1.2.3.4
 Exec: /sbin/route add -net '9.8.7' -interface 'ppp1' 2>&1
 add net 9.8.7: gateway ppp1
 ```
+
+In the above log dump, the remote VPN IP is `1.2.3.4` which you can see in the
+System arguments dump near `[5] Remote IP: '1.2.3.4'`
+
+If you are unsure what your actual VPN IP address is, connect to your VPN and then
+look at this log file to see what the Remote IP is.  The Remote IP is what you need
+to list in your `$HOME/.routes.json` file as the VPN identifier.
