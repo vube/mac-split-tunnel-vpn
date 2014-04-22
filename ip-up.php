@@ -257,6 +257,16 @@ function getRoutes() {
         return null;
     }
 
+	// Remove comments from the JSON string before we parse it
+	// Comments aren't technically part of the JSON spec but especially when hand-editing config files,
+	// it's real nice to have them.
+	//
+	// This is a very simple parser, it just removes // comments and doesn't pay attention
+	// to any sort of spacing etc.  That's OK since the string "//" should never appear in
+	// our config anyway, as simple as it currently is.
+	$data = preg_replace(",\s*//.*,", "", $data);
+//	logMessage("JSON data after preg_replace:\n", $data); // DEBUG
+
     // decode the JSON into an object
     $json = json_decode($data);
     if($json === null) {
