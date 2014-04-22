@@ -24,6 +24,7 @@ You only need a file in your home directory that contains the routes.  In the in
 instructions, we symlink'd the `routes.json` config file to your home directory, a file
 named `$HOME/.routes.json`
 
+
 ### Example `$HOME/.routes.json` file
 
 ```json
@@ -36,6 +37,17 @@ named `$HOME/.routes.json`
 
 The above example will route all the traffic for the class C block `9.8.7.*` to your VPN
 server whose IP is `1.2.3.4`
+
+
+### Configuring your VPN
+
+You *must* configure your VPN such that the "Send all traffic over VPN connection" checkbox
+*is not checked* in the Advanced settings screen.
+
+See below for an example of a correctly configured VPN.
+
+![Screenshot of VPN Advanced Settings Dialog](https://raw.github.com/vube/mac-split-tunnel-vpn/master/help/VPN-Advanced-Settings-Dialog.png)
+
 
 ### Advanced Example `$HOME/.routes.json` file
 
