@@ -71,7 +71,7 @@ $argNames = array(
     '[0] path to this script',
     '[1] pppd Interface name',
     '[2] TTY device name',
-    '[3] TTY devide speed',
+    '[3] TTY device speed',
     '[4] Local IP',
     '[5] Remote IP',
     '[6] pppd ipparam option',
@@ -368,7 +368,7 @@ function main() {
     }
     else { // this remote IP is not known by the config
         
-        logMessage("No routes configured for remote $remoteIp");
+        logMessage("Notice: No routes configured for remote $remoteIp");
     }
     
     return 0;
