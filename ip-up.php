@@ -360,14 +360,13 @@ function main() {
     $remoteIp = $_SERVER['argv'][5];
     $remoteIpConfigs = expectObjectGetArray($routes['remotes'], "Invalid remotes value in routes.json");
 
-    $remoteIpList = array_keys($remoteIpConfigs)
-    $matchedRemoteIpConfig = false
+    $matchedRemoteIpConfig = false;
 
-    // If we have a list of networks to send to this remote IP, set them
-    for ($i = 0; $i < count($remoteIpList); $i++) {
-        $remoteIpItem = $remoteIpList[$i]
-        if (strpos($remoteIp, $remoteIpItem) !== false) {
-            $matchedRemoteIpConfig = $remoteIpConfigs[$remoteIpItem]
+    // If any of the config remote IP partially matches the actual remote IP, use the config.
+    // If multiple matches occur, the final one will be applied
+    foreach ($remoteIpConfigs as $ip => $config) {
+        if (strpos($remoteIp, $ip) !== false) {
+            $matchedRemoteIpConfig = $remoteIpConfigs[$ip];
         }
     }
 
