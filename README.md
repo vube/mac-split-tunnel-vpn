@@ -38,6 +38,18 @@ named `$HOME/.routes.json`
 The above example will route all the traffic for the class C block `9.8.7.*` to your VPN
 server whose IP is `1.2.3.4`
 
+### Remote VPN IP partial matching
+
+```json
+{ "remotes": {
+	"1.2.3": [
+		"9.8.7"
+	]
+} }
+```
+
+The above example will route all the traffic for the class C block `9.8.7.*` to your VPN
+server whose IP partially matches `1.2.3`, for example: `1.2.3.4`, `9.1.2.3`
 
 ### Configuring your VPN
 
